@@ -2,103 +2,117 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Entity;
-using System.Data.Entity.Infrastructure;
 using System.Linq;
 using System.Net;
-using System.Net.Http;
-using System.Web.Http;
-using System.Web.Http.Description;
+using System.Web;
+using System.Web.Mvc;
 using luke_sample_webapp.Models;
 
 namespace luke_sample_webapp.Controllers
 {
-    public class ContactsController : ApiController
+    public class ContactsController : Controller
     {
         private LukesContext db = new LukesContext();
 
-        // GET: api/Contacts
-        public IQueryable<Contact> GetContacts()
+        // GET: Contacts
+        public ActionResult Index()
         {
-            return db.Contacts;
+            return View(db.Contacts.ToList());
         }
 
-        // GET: api/Contacts/5
-        [ResponseType(typeof(Contact))]
-        public IHttpActionResult GetContact(int id)
+        // GET: Contacts/Details/5
+        public ActionResult Details(int? id)
         {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
             Contact contact = db.Contacts.Find(id);
             if (contact == null)
             {
-                return NotFound();
+                return HttpNotFound();
             }
-
-            return Ok(contact);
+            return View(contact);
         }
 
-        // PUT: api/Contacts/5
-        [ResponseType(typeof(void))]
-        public IHttpActionResult PutContact(int id, Contact contact)
+        // GET: Contacts/Create
+        public ActionResult Create()
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+            return View();
+        }
 
-            if (id != contact.Id)
+        // POST: Contacts/Create
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Create([Bind(Include = "Id,Name,Address,City,Country")] Contact contact)
+        {
+            if (ModelState.IsValid)
             {
-                return BadRequest();
-            }
-
-            db.Entry(contact).State = EntityState.Modified;
-
-            try
-            {
+                db.Contacts.Add(contact);
                 db.SaveChanges();
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!ContactExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                return RedirectToAction("Index");
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            return View(contact);
         }
 
-        // POST: api/Contacts
-        [ResponseType(typeof(Contact))]
-        public IHttpActionResult PostContact(Contact contact)
+        // GET: Contacts/Edit/5
+        public ActionResult Edit(int? id)
         {
-            if (!ModelState.IsValid)
+            if (id == null)
             {
-                return BadRequest(ModelState);
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
             }
-
-            db.Contacts.Add(contact);
-            db.SaveChanges();
-
-            return CreatedAtRoute("DefaultApi", new { id = contact.Id }, contact);
-        }
-
-        // DELETE: api/Contacts/5
-        [ResponseType(typeof(Contact))]
-        public IHttpActionResult DeleteContact(int id)
-        {
             Contact contact = db.Contacts.Find(id);
             if (contact == null)
             {
-                return NotFound();
+                return HttpNotFound();
             }
+            return View(contact);
+        }
 
+        // POST: Contacts/Edit/5
+        // To protect from overposting attacks, please enable the specific properties you want to bind to, for 
+        // more details see https://go.microsoft.com/fwlink/?LinkId=317598.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public ActionResult Edit([Bind(Include = "Id,Name,Address,City,Country")] Contact contact)
+        {
+            if (ModelState.IsValid)
+            {
+                db.Entry(contact).State = EntityState.Modified;
+                db.SaveChanges();
+                return RedirectToAction("Index");
+            }
+            return View(contact);
+        }
+
+        // GET: Contacts/Delete/5
+        public ActionResult Delete(int? id)
+        {
+            if (id == null)
+            {
+                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
+            }
+            Contact contact = db.Contacts.Find(id);
+            if (contact == null)
+            {
+                return HttpNotFound();
+            }
+            return View(contact);
+        }
+
+        // POST: Contacts/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public ActionResult DeleteConfirmed(int id)
+        {
+            Contact contact = db.Contacts.Find(id);
             db.Contacts.Remove(contact);
             db.SaveChanges();
-
-            return Ok(contact);
+            return RedirectToAction("Index");
         }
 
         protected override void Dispose(bool disposing)
@@ -108,11 +122,6 @@ namespace luke_sample_webapp.Controllers
                 db.Dispose();
             }
             base.Dispose(disposing);
-        }
-
-        private bool ContactExists(int id)
-        {
-            return db.Contacts.Count(e => e.Id == id) > 0;
         }
     }
 }
